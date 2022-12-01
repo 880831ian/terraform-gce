@@ -1,6 +1,5 @@
 # 使用 Terraform 建立 Google Compute Engine
 
-
 嗨嗨大家好，距離上一篇筆記又隔了 3 個月，最近公司有專案在忙，沒時間把上次提到的 Terraform 應用筆記寫完，現在他來拉～～～ 😂 我們這次的主題是使用 Terraform 來建立 Google Compute Engine 的機器，想知道要怎麼用一段程式碼就可以建立、修改、刪除 Google Compute Engine 的機器一定要來看這一篇～我們開始囉 🧑‍💻
 
 <br>
@@ -15,10 +14,9 @@
 
 <br>
 
-### 選擇供應者以及對應的專案 
+### 選擇供應者以及對應的專案
 
-
-```
+```tf
 provider "google" {
   project = "gcp-20210526-001"
 }
@@ -32,7 +30,7 @@ provider "google" {
 
 接下來的設定都會放在以下的 google_compute_instance resource 內，為了方便介紹，就不會標明 google_compute_instance，詳細完整程式碼請參考 GitLab [Github 程式碼連結](https://github.com/880831ian/terraform-gce)
 
-```
+```tf
 resource "google_compute_instance" "default" {
 }
 ```
@@ -41,75 +39,79 @@ resource "google_compute_instance" "default" {
 
 #### 基本設定
 
-```
+```tf
   name        = "test"
   description = "我是 test 機器"
   machine_type = "n2-standard-8"
   zone = "asia-east1-b"
   tags = ["test"]
-  
+
   labels = {
     env  = "test"
   }
-  
-  deletion_protection = "true"   
+
+  deletion_protection = "true"
 ```
-* name：GCE 要求資源的唯一名稱。如果有更改此項會直接強制創建的新資源 <font color='red'>(必填)</font>
-* description：對此資源的簡單說明 <font color='blue'>(選填)</font>
-* machine_type：要創建的機器類型 <font color='red'>(必填)</font>
-* zone：創建機器的所在區域，若沒有填寫，則會使用提供者的區域 <font color='blue'>(選填)</font>
-* tags：附加到實體的網路標籤列表 <font color='blue'>(選填)</font>
-* labels：一組分配給 disk 的 key/value 標籤 <font color='blue'>(選填)</font>
-* deletion_protection：刪除保護，預設是 `false`，當我們使用 `terraform destroy` 刪除 GCE 時，必須先改成 `false`，才可以刪除，否則會無法刪除且 Terraform 運行也會失敗，算是一個保護機制，後面再刪除 Google Compute Engine 時會測試畫面 <font color='blue'>(選填)</font>
+
+- name：GCE 要求資源的唯一名稱。如果有更改此項會直接強制創建的新資源 <font color='red'>(必填)</font>
+- description：對此資源的簡單說明 <font color='blue'>(選填)</font>
+- machine_type：要創建的機器類型 <font color='red'>(必填)</font>
+- zone：創建機器的所在區域，若沒有填寫，則會使用提供者的區域 <font color='blue'>(選填)</font>
+- tags：附加到實體的網路標籤列表 <font color='blue'>(選填)</font>
+- labels：一組分配給 disk 的 key/value 標籤 <font color='blue'>(選填)</font>
+- deletion_protection：刪除保護，預設是 `false`，當我們使用 `terraform destroy` 刪除 GCE 時，必須先改成 `false`，才可以刪除，否則會無法刪除且 Terraform 運行也會失敗，算是一個保護機制，後面再刪除 Google Compute Engine 時會測試畫面 <font color='blue'>(選填)</font>
 
 <br>
 
 #### 啟動 disk 設定
 
-```
+```tf
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-10-buster-v20210512"
       type = "pd-balanced"
       size = "50"
     }
-  } 
+  }
 ```
-* image：初始化此 disk 的 image <font color='blue'>(選填)</font>
-* type：GCE disk 類型 <font color='blue'>(選填)</font>
-* size：image 大小，已 `GB` 為單位，如果未指定，將會繼承其初始化 disk 的 image 大小 <font color='blue'>(選填)</font>
+
+- image：初始化此 disk 的 image <font color='blue'>(選填)</font>
+- type：GCE disk 類型 <font color='blue'>(選填)</font>
+- size：image 大小，已 `GB` 為單位，如果未指定，將會繼承其初始化 disk 的 image 大小 <font color='blue'>(選填)</font>
 
 <br>
 
 #### 網路設定
 
-```
+```tf
   network_interface {
     network = "projects/rd-gateway/global/networks/rd-common"
-    subnetwork = "projects/rd-gateway/regions/asia-east1/subnetworks/rd-common-asia-east1-pid-cicd"     
+    subnetwork = "projects/rd-gateway/regions/asia-east1/subnetworks/rd-common-asia-east1-pid-cicd"
 
     access_config {
       nat_ip = ""
     }
 
   }
-```  
-* network：設定附加到的網路名稱或是 self_link <font color='blue'>(選填)</font>
-* subnetwork：設定附加到的子網路名稱或是 self_link <font color='blue'>(選填)</font>
-* nat_ip：如果想要有外網的 ip，必須加上此參數，才會產生一組外網 ip <font color='blue'>(選填)</font>
+```
+
+- network：設定附加到的網路名稱或是 self_link <font color='blue'>(選填)</font>
+- subnetwork：設定附加到的子網路名稱或是 self_link <font color='blue'>(選填)</font>
+- nat_ip：如果想要有外網的 ip，必須加上此參數，才會產生一組外網 ip <font color='blue'>(選填)</font>
 
 <br>
 
 #### 權限設定
 
-```
+```tf
   service_account {
     email  = "676962704505-compute@developer.gserviceaccount.com"
     scopes = ["storage-rw", "logging-write", "monitoring-write", "service-control", "service-management", "trace"]
   }
 ```
-* email：服務帳戶電子郵件地址。如果未提供，則使用預設的 Google Compute Engine 服務帳戶 <font color='blue'>(選填)</font>
-* scopes：服務範圍列表，可以[點我查看範圍](https://cloud.google.com/sdk/gcloud/reference/alpha/compute/instances/set-scopes#--scopes)的完整列表 <font color='red'>(必填)</font>
+
+- email：服務帳戶電子郵件地址。如果未提供，則使用預設的 Google Compute Engine 服務帳戶 <font color='blue'>(選填)</font>
+- scopes：服務範圍列表，可以[點我查看範圍](https://cloud.google.com/sdk/gcloud/reference/alpha/compute/instances/set-scopes#--scopes)的完整列表 <font color='red'>(必填)</font>
 
 <br>
 
@@ -141,20 +143,17 @@ resource "google_compute_instance" "default" {
 
 ![圖片](https://raw.githubusercontent.com/880831ian/terraform-gce/master/images/3.png)
 
-
-
 <br>
 
 ## 修改 Google Compute Engine
 
-當我們發現我們建立的  Google Compute Engine 參數有錯，想要修改時，我們只需要修改程式碼部分，並重新下一次 `terraform apply` 來修改 Google Compute Engine，就會看到以下畫面 (有些設定檔是不能修改的，若修改他會重新創建一個新的機器，像是 name 之類的，使用時要小心一點 😉)
+當我們發現我們建立的 Google Compute Engine 參數有錯，想要修改時，我們只需要修改程式碼部分，並重新下一次 `terraform apply` 來修改 Google Compute Engine，就會看到以下畫面 (有些設定檔是不能修改的，若修改他會重新創建一個新的機器，像是 name 之類的，使用時要小心一點 😉)
 
-我們拿剛剛提到的 nat_ip，我們先把它註解掉，再下 `terraform apply`  看看機器有什麼變化～
+我們拿剛剛提到的 nat_ip，我們先把它註解掉，再下 `terraform apply` 看看機器有什麼變化～
 
 <br>
 
 ![圖片](https://raw.githubusercontent.com/880831ian/terraform-gce/master/images/4.png)
-
 
 <br>
 
@@ -163,7 +162,6 @@ resource "google_compute_instance" "default" {
 <br>
 
 ![圖片](https://raw.githubusercontent.com/880831ian/terraform-gce/master/images/5.png)
-
 
 <br>
 
@@ -189,7 +187,6 @@ resource "google_compute_instance" "default" {
 
 ![圖片](https://raw.githubusercontent.com/880831ian/terraform-gce/master/images/7.png)
 
-
 <br>
 
 現在 deletion_protection 是 `false`，我們就可以下 `terraform destroy` 來刪除 Google Compute Engine 🔪
@@ -198,11 +195,9 @@ resource "google_compute_instance" "default" {
 
 ![圖片](https://raw.githubusercontent.com/880831ian/terraform-gce/master/images/8.png)
 
-
 <br>
 
 ![圖片](https://raw.githubusercontent.com/880831ian/terraform-gce/master/images/9.png)
-
 
 <br>
 
